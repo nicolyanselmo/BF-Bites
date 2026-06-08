@@ -54,26 +54,36 @@ const funcionario = {
         const estoqueContainer = document.getElementById('stock-section');
         const produtos = obterProdutos();
 
+        const produtosHtml = produtos.map(prod => `
+            <div class="stock-card">
+                <div class="stock-card-header">
+                    <h3>${prod.nome}</h3>
+                    <span class="price-tag">R$ ${prod.preco.toFixed(2)}</span>
+                </div>
+                <div class="stock-card-body">
+                    <div class="stock-info">
+                        <label>Quantidade em estoque:</label>
+                        <input id="stock-qty-${prod.id}" type="number" min="0" value="${prod.estoque}" class="qty-input" />
+                    </div>
+                    <button class="btn btn-primary btn-sm" onclick="funcionario.atualizarEstoque(${prod.id})">Salvar</button>
+                </div>
+            </div>
+        `).join('');
+
         const estoqueHtml = `
             <div class="card">
                 <h3>Controle de Estoque</h3>
-                <div class="stock-actions">
-                    <input id="new-product-name" type="text" placeholder="Novo sabor de esfirra" />
-                    <input id="new-product-quantity" type="number" min="1" placeholder="Quantidade" />
-                    <button class="btn btn-gold btn-sm" onclick="funcionario.adicionarProdutoEstoque()">Adicionar produto</button>
-                </div>
-                ${produtos.map(prod => `
-                    <div class="product-item stock-item">
-                        <div class="product-info">
-                            <h3>${prod.nome}</h3>
-                            <span class="stock-tag ${prod.estoque <= 0 ? 'out-of-stock' : ''}">Estoque: ${prod.estoque}</span>
-                        </div>
-                        <div class="stock-edit">
-                            <input id="stock-qty-${prod.id}" type="number" min="0" value="${prod.estoque}" />
-                            <button class="btn btn-primary btn-sm" onclick="funcionario.atualizarEstoque(${prod.id})">Salvar</button>
-                        </div>
+                <div class="add-product-section">
+                    <h4>Adicionar novo sabor</h4>
+                    <div class="stock-actions">
+                        <input id="new-product-name" type="text" placeholder="Nome da esfirra" />
+                        <input id="new-product-quantity" type="number" min="1" placeholder="Quantidade inicial" />
+                        <button class="btn btn-gold btn-sm" onclick="funcionario.adicionarProdutoEstoque()">➕ Adicionar</button>
                     </div>
-                `).join('')}
+                </div>
+                <div class="products-grid">
+                    ${produtosHtml}
+                </div>
             </div>
         `;
 

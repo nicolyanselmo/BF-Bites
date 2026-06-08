@@ -218,6 +218,81 @@ h1, h2, h3 {
     font-size: 0.95rem;
 }
 
+.add-product-section {
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #ddd;
+}
+
+.add-product-section h4 {
+    color: var(--primary-blue);
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.products-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+}
+
+.stock-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.stock-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.stock-card-header h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: var(--primary-blue);
+}
+
+.price-tag {
+    background: var(--gold);
+    color: var(--primary-blue);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.stock-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stock-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stock-info label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.qty-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
 .order-header {
     display: flex;
     justify-content: space-between;
