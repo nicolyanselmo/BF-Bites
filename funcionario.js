@@ -68,7 +68,10 @@ const funcionario = {
                             <h3>${prod.nome}</h3>
                             <span class="stock-tag ${prod.estoque <= 0 ? 'out-of-stock' : ''}">Estoque: ${prod.estoque}</span>
                         </div>
-                        <button class="btn btn-primary btn-sm" onclick="funcionario.aumentarEstoque(${prod.id})">+</button>
+                        <div class="stock-edit">
+                            <input id="stock-qty-${prod.id}" type="number" min="0" value="${prod.estoque}" />
+                            <button class="btn btn-primary btn-sm" onclick="funcionario.atualizarEstoque(${prod.id})">Salvar</button>
+                        </div>
                     </div>
                 `).join('')}
             </div>
@@ -97,13 +100,19 @@ const funcionario = {
         app.mostrarToast('Produto adicionado ao estoque');
     },
 
-    aumentarEstoque: function(id) {
+    atualizarEstoque: function(id) {
+        const input = document.getElementById(`stock-qty-${id}`);
+        const novoValor = Number(input.value);
+        if (isNaN(novoValor) || novoValor < 0) {
+            app.mostrarToast('Quantidade inválida', true);
+            return;
+        }
         const produto = DB.produtos.find(p => p.id === id);
         if (!produto) return;
-        produto.estoque += 1;
+        produto.estoque = novoValor;
         salvarBanco();
         this.renderizarEstoque();
-        app.mostrarToast(`Aumentado estoque de ${produto.nome}`);
+        app.mostrarToast(`Estoque de ${produto.nome} atualizado para ${novoValor}`);
     },
 
     renderizarPedidos: function() {

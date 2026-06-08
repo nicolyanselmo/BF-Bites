@@ -201,6 +201,21 @@ h1, h2, h3 {
 
 .stock-item {
     justify-content: space-between;
+    gap: 10px;
+}
+
+.stock-edit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.stock-edit input {
+    width: 90px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    font-size: 0.95rem;
 }
 
 .order-header {
