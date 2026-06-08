@@ -3,6 +3,25 @@
 
 const funcionario = {
     
+    // Renderiza o resumo de caixa do funcionário
+    // parametro: nenhum
+    // retorno: exibe total de vendas e pedidos realizados
+    renderizarCaixa: function() {
+        const caixaContainer = document.getElementById('cash-summary');
+        const totalVendas = obterTotalVendas();
+        const totalPedidos = obterPedidos().length;
+
+        const caixaHtml = `
+            <div class="card">
+                <h3>Controle de Caixa</h3>
+                <p>Total de pedidos: <strong>${totalPedidos}</strong></p>
+                <p>Valor total das vendas: <strong>R$ ${totalVendas.toFixed(2)}</strong></p>
+            </div>
+        `;
+
+        caixaContainer.innerHTML = caixaHtml;
+    },
+
     // Renderiza o controle de estoque e o painel de pedidos do funcionário
     // parametro: nenhum
     // retorno: atualiza o estoque e os pedidos na interface
@@ -33,6 +52,7 @@ const funcionario = {
     // parametro: nenhum
     // retorno: insere cards de pedidos no elemento #orders-list
     renderizarPedidos: function() {
+        this.renderizarCaixa();
         this.renderizarEstoque();
         const lista = document.getElementById('orders-list');
         const pedidos = obterPedidos();

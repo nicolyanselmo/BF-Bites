@@ -25,6 +25,13 @@ function obterPedidos() {
     return DB.pedidos;
 }
 
+// Retorna o valor total de vendas acumulado nos pedidos
+// parametro: nenhum
+// retorno: número com o total das vendas
+function obterTotalVendas() {
+    return DB.pedidos.reduce((sum, pedido) => sum + pedido.total, 0);
+}
+
 // Gera um ID único para o novo pedido
 // parametro: nenhum
 // retorno: string de ID (ex: #171483...)

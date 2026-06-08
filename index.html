@@ -12,6 +12,19 @@
     <!-- Sistema de Notificações -->
     <div id="toast"></div>
 
+    <!-- Menu superior -->
+    <nav class="topbar">
+        <div class="brand">
+            <span class="brand-mark">BF</span>
+            <span>BITES</span>
+        </div>
+        <div class="nav-links">
+            <button class="btn btn-outline btn-sm" onclick="app.voltarParaHome()">Início</button>
+            <button class="btn btn-outline btn-sm" onclick="app.irParaLogin('aluno')">Aluno</button>
+            <button class="btn btn-outline btn-sm" onclick="app.irParaLogin('funcionario')">Funcionário</button>
+        </div>
+    </nav>
+
     <!-- 1. TELA INICIAL (SPLASH) -->
     <section id="screen-splash" class="screen active">
         <div class="logo-container">
@@ -71,6 +84,7 @@
             <p>Gerencie as entregas do dia</p>
         </header>
 
+        <div id="cash-summary"></div>
         <div id="stock-summary"></div>
         <div id="orders-list">
             <!-- Pedidos serão injetados aqui via JS -->
