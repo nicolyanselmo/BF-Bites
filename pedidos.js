@@ -68,11 +68,13 @@ function resetDoDiaSeNecessario() {
     if (DB.currentDate !== hoje) {
         const total = obterTotalVendas();
         const count = DB.pedidos.length;
+        const produtos = DB.pedidos.reduce((sum, p) => sum + p.itens.length, 0);
         if (count > 0) {
             DB.historico.unshift({
                 date: DB.currentDate,
                 total: total,
-                pedidos: count
+                pedidos: count,
+                produtos: produtos
             });
         }
         DB.pedidos = [];
@@ -83,7 +85,13 @@ function resetDoDiaSeNecessario() {
 
 function agendarResetDiario() {
     const agora = new Date();
-    const proximoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate() + 1, 0, 0, 5);
+    const proximoDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate(), 23, 55, 0);
+    
+    // Se já passou das 23:55, agendar para amanhã
+    if (agora > proximoDia) {
+        proximoDia.setDate(proximoDia.getDate() + 1);
+    }
+    
     const atraso = proximoDia.getTime() - agora.getTime();
     setTimeout(() => {
         resetDoDiaSeNecessario();

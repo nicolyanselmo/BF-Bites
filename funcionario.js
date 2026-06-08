@@ -25,6 +25,7 @@ const funcionario = {
         const caixaContainer = document.getElementById('cash-section');
         const totalVendas = obterTotalVendas();
         const totalPedidos = obterPedidos().length;
+        const totalProdutosVendidos = obterPedidos().reduce((sum, p) => sum + p.itens.length, 0);
         const dataHoje = getDataAtual();
         const historico = obterHistoricoVendas();
 
@@ -32,6 +33,7 @@ const funcionario = {
             <div class="history-row">
                 <span class="history-date">${item.date}</span>
                 <span class="history-pedidos">${item.pedidos} pedidos</span>
+                <span class="history-produtos">${item.produtos || 0} itens</span>
                 <span class="history-valor">R$ ${item.total.toFixed(2)}</span>
             </div>
         `).join('');
@@ -49,7 +51,11 @@ const funcionario = {
                         <span class="stat-value">${totalPedidos}</span>
                     </div>
                     <div class="cash-stat">
-                        <span class="stat-label">Total Vendido</span>
+                        <span class="stat-label">Produtos Vendidos</span>
+                        <span class="stat-value">${totalProdutosVendidos}</span>
+                    </div>
+                    <div class="cash-stat">
+                        <span class="stat-label">Lucro do Dia</span>
                         <span class="stat-value gold-large">R$ ${totalVendas.toFixed(2)}</span>
                     </div>
                 </div>
@@ -61,6 +67,7 @@ const funcionario = {
                             <div class="history-header">
                                 <span>Data</span>
                                 <span>Pedidos</span>
+                                <span>Itens</span>
                                 <span>Total</span>
                             </div>
                             ${historicoHtml}
@@ -95,11 +102,17 @@ const funcionario = {
             <div class="card">
                 <h3>Controle de Estoque</h3>
                 <div class="add-product-section">
-                    <h4>Adicionar novo sabor</h4>
-                    <div class="stock-actions">
-                        <input id="new-product-name" type="text" placeholder="Nome da esfirra" />
-                        <input id="new-product-quantity" type="number" min="1" placeholder="Quantidade inicial" />
-                        <button class="btn btn-gold btn-sm" onclick="funcionario.adicionarProdutoEstoque()">➕ Adicionar</button>
+                    <button class="btn btn-gold" style="width: 100%; margin-bottom: 0;" onclick="funcionario.toggleFormProduto()">➕ Cadastrar Novo Produto</button>
+                    <div id="form-product" style="display: none; margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 12px;">
+                        <h4>Adicionar novo sabor</h4>
+                        <div class="stock-actions">
+                            <input id="new-product-name" type="text" placeholder="Nome da esfirra" />
+                            <input id="new-product-quantity" type="number" min="1" placeholder="Quantidade inicial" />
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-gold btn-sm" onclick="funcionario.adicionarProdutoEstoque()">✓ Confirmar</button>
+                                <button class="btn btn-outline btn-sm" onclick="funcionario.toggleFormProduto()">✕ Cancelar</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="products-grid">
@@ -109,6 +122,13 @@ const funcionario = {
         `;
 
         estoqueContainer.innerHTML = estoqueHtml;
+    },
+
+    toggleFormProduto: function() {
+        const form = document.getElementById('form-product');
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
     },
 
     adicionarProdutoEstoque: function() {
