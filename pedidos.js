@@ -1,12 +1,14 @@
 // Gerenciamento de Dados (Estoque e Pedidos)
 // Este arquivo simula o banco de dados da aplicação
 
+const PRODUTOS_PADRAO = [
+    { id: 1, nome: "Esfirra de Frango", preco: 11.00, estoque: 20 },
+    { id: 2, nome: "Esfirra de Calabresa", preco: 11.00, estoque: 20 },
+    { id: 3, nome: "Esfirra de Presunto e Queijo", preco: 11.00, estoque: 20 }
+];
+
 const DB = {
-    produtos: [
-        { id: 1, nome: "Esfirra de Frango", preco: 11.00, estoque: 20 },
-        { id: 2, nome: "Esfirra de Calabresa", preco: 11.00, estoque: 20 },
-        { id: 3, nome: "Esfirra de Presunto e Queijo", preco: 11.00, estoque: 20 }
-    ],
+    produtos: [...PRODUTOS_PADRAO],
     pedidos: [],
     historico: [],
     currentDate: new Date().toLocaleDateString('pt-BR')
@@ -61,6 +63,17 @@ function carregarBanco() {
         if (parsed.historico) DB.historico = parsed.historico;
         if (parsed.currentDate) DB.currentDate = parsed.currentDate;
     }
+
+    if (!Array.isArray(DB.produtos) || DB.produtos.length === 0) {
+        DB.produtos = [...PRODUTOS_PADRAO];
+    } else {
+        PRODUTOS_PADRAO.forEach(defaultProduto => {
+            if (!DB.produtos.some(prod => prod.nome === defaultProduto.nome)) {
+                DB.produtos.push({ ...defaultProduto });
+            }
+        });
+    }
+
     resetDoDiaSeNecessario();
 }
 

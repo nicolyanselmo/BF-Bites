@@ -77,11 +77,38 @@
             <section id="cash-section" class="func-section"></section>
         </div>
 
+        <div id="stock-modal" class="modal-overlay" onclick="funcionario.fecharModalCadastroProduto(event)">
+            <div class="modal-card" onclick="event.stopPropagation()">
+                <div class="modal-header">
+                    <h2>Cadastrar Produto</h2>
+                    <button class="modal-close" onclick="funcionario.fecharModalCadastroProduto()">×</button>
+                </div>
+                <div class="modal-content">
+                    <div class="input-group">
+                        <label for="new-stock-name">Nome do produto</label>
+                        <input id="new-stock-name" type="text" placeholder="Esfirra de Frango" />
+                    </div>
+                    <div class="input-group">
+                        <label for="new-stock-quantity">Quantidade</label>
+                        <input id="new-stock-quantity" type="number" min="1" placeholder="Quantidade inicial" />
+                    </div>
+                    <div class="input-group">
+                        <label for="new-stock-price">Valor</label>
+                        <input id="new-stock-price" type="number" min="0.01" step="0.01" placeholder="11.00" />
+                    </div>
+                    <div style="display:flex; gap:10px; margin-top:10px;">
+                        <button class="btn btn-gold btn-sm" onclick="funcionario.adicionarProdutoEstoque()">Salvar</button>
+                        <button class="btn btn-outline btn-sm" onclick="funcionario.fecharModalCadastroProduto()">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="func-footer-menu">
             <button class="btn btn-gold btn-sm active" data-tab="pedidos" onclick="funcionario.mostrarSecao('pedidos')">Pedidos</button>
             <button class="btn btn-gold btn-sm" data-tab="estoque" onclick="funcionario.mostrarSecao('estoque')">Estoque</button>
             <button class="btn btn-gold btn-sm" data-tab="caixa" onclick="funcionario.mostrarSecao('caixa')">Caixa</button>
-            <button class="btn btn-outline btn-sm" data-tab="sair" onclick="app.voltarParaHome()">Sair</button>
+            <button class="btn btn-gold btn-sm" onclick="app.voltarParaHome()">Sair</button>
         </div>
     </section>
 

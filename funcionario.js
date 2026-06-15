@@ -78,19 +78,9 @@ const funcionario = {
         const estoqueHtml = `
             <div class="card">
                 <h3>Controle de Estoque</h3>
+                <p style="color:#666; margin-bottom: 16px;">Edite a quantidade dos itens abaixo ou adicione novos produtos.</p>
                 <div class="add-product-section">
-                    <button class="btn btn-gold" style="width: 100%; margin-bottom: 0;" onclick="funcionario.toggleFormProduto()">➕ Cadastrar Novo Produto</button>
-                    <div id="form-product" style="display: none; margin-top: 20px; padding: 20px; background: #f9f9f9; border-radius: 12px;">
-                        <h4>Adicionar novo sabor</h4>
-                        <div class="stock-actions">
-                            <input id="new-product-name" type="text" placeholder="Nome da esfirra" />
-                            <input id="new-product-quantity" type="number" min="1" placeholder="Quantidade inicial" />
-                            <div style="display: flex; gap: 10px;">
-                                <button class="btn btn-gold btn-sm" onclick="funcionario.adicionarProdutoEstoque()">✓ Confirmar</button>
-                                <button class="btn btn-outline btn-sm" onclick="funcionario.toggleFormProduto()">✕ Cancelar</button>
-                            </div>
-                        </div>
-                    </div>
+                    <button class="btn btn-gold" style="width: 100%; margin-bottom: 0;" onclick="funcionario.abrirModalCadastroProduto()">➕ Cadastrar Novo Produto</button>
                 </div>
                 <div class="products-grid">
                     ${produtosHtml}
@@ -101,29 +91,43 @@ const funcionario = {
         estoqueContainer.innerHTML = estoqueHtml;
     },
 
-    toggleFormProduto: function() {
-        const form = document.getElementById('form-product');
-        if (form) {
-            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    abrirModalCadastroProduto: function() {
+        const modal = document.getElementById('stock-modal');
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    },
+
+    fecharModalCadastroProduto: function(event) {
+        if (event && event.target !== event.currentTarget) return;
+        const modal = document.getElementById('stock-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
         }
     },
 
     adicionarProdutoEstoque: function() {
-        const nomeInput = document.getElementById('new-product-name');
-        const quantidadeInput = document.getElementById('new-product-quantity');
+        const nomeInput = document.getElementById('new-stock-name');
+        const quantidadeInput = document.getElementById('new-stock-quantity');
+        const priceInput = document.getElementById('new-stock-price');
         const nome = nomeInput.value.trim();
         const quantidade = Number(quantidadeInput.value);
+        const preco = Number(priceInput.value);
 
-        if (!nome || quantidade <= 0) {
-            app.mostrarToast('Digite nome e quantidade válidos', true);
+        if (!nome || quantidade <= 0 || preco <= 0) {
+            app.mostrarToast('Preencha nome, quantidade e valor válidos', true);
             return;
         }
 
         const novoId = DB.produtos.length ? Math.max(...DB.produtos.map(p => p.id)) + 1 : 1;
-        DB.produtos.push({ id: novoId, nome, preco: 11.00, estoque: quantidade });
+        DB.produtos.push({ id: novoId, nome, preco: preco, estoque: quantidade });
         salvarBanco();
         nomeInput.value = '';
         quantidadeInput.value = '';
+        priceInput.value = '';
+        this.fecharModalCadastroProduto();
         this.renderizarEstoque();
         app.mostrarToast('Produto adicionado ao estoque');
     },
