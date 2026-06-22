@@ -243,9 +243,12 @@ h1, h2, h3 {
 
 .screen-funcionario {
     padding: 0;
+    overflow: hidden;
+}
+
+.screen-funcionario.active {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .modal-overlay {
@@ -325,7 +328,7 @@ h1, h2, h3 {
     .func-footer-menu {
         gap: 8px;
         padding: 10px;
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .func-footer-menu .btn {
@@ -746,6 +749,11 @@ input:focus {
     opacity: 0.7;
 }
 
+.order-card.refused {
+    border-left-color: var(--error);
+    opacity: 0.7;
+}
+
 .status-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -757,6 +765,7 @@ input:focus {
 
 .status-pending { background: #fff3cd; color: #856404; }
 .status-delivered { background: #d4edda; color: #155724; }
+.status-refused { background: #f8d7da; color: #721c24; }
 
 /* Notification */
 #toast {
