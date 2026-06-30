@@ -121,9 +121,11 @@ const aluno = {
 
         const total = this.carrinho.reduce((sum, item) => sum + item.preco, 0);
         const nomeAluno = app.usuarioLogado || document.getElementById('user-name').value || "Aluno";
+        const emailAluno = app.usuarioEmail || "";
 
         const pedidoRealizado = salvarPedido({
             aluno: nomeAluno,
+            email: emailAluno,
             itens: this.carrinho,
             total: total
         });

@@ -781,3 +781,23 @@ input:focus {
     display: none;
     box-shadow: var(--shadow);
 }
+
+/* Google Sign-In Button style */
+.btn-google {
+    background-color: #ffffff;
+    color: #3c4043;
+    border: 1px solid #dadce0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    transition: background-color .2s, border-color .2s;
+    box-shadow: 0 1px 2px 0 rgba(60,64,67,0.30), 0 1px 3px 1px rgba(60,64,67,0.15);
+}
+.btn-google:hover {
+    background-color: #f8f9fa;
+    border-color: #d2d4d7;
+}

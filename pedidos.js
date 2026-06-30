@@ -1,5 +1,24 @@
 // Gerenciamento de Dados (Estoque e Pedidos)
-// Este arquivo simula o banco de dados da aplicação
+// Sincronizado em tempo real com Firebase Realtime Database
+
+// Configuração do Firebase fornecida pelo usuário
+const firebaseConfig = {
+  apiKey: "AIzaSyArq7QmUjxkJ3tOx1WulugErf388tnxTOw",
+  authDomain: "bf-bites.firebaseapp.com",
+  databaseURL: "https://bf-bites-default-rtdb.firebaseio.com",
+  projectId: "bf-bites",
+  storageBucket: "bf-bites.firebasestorage.app",
+  messagingSenderId: "3501684000",
+  appId: "1:3501684000:web:15277980e41b4746649345",
+  measurementId: "G-MZ022RCP2L"
+};
+
+// Inicializa o Firebase se o script estiver disponível
+let dbRef = null;
+if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    dbRef = firebase.database().ref('bfBitesDB');
+}
 
 const PRODUTOS_PADRAO = [
     { id: 1, nome: "Esfirra de Frango", preco: 11.00, estoque: 20 },
@@ -47,13 +66,21 @@ function getDataAtual() {
 }
 
 function salvarBanco() {
-    localStorage.setItem('bfBitesDB', JSON.stringify({
+    const payload = {
         produtos: DB.produtos,
         pedidos: DB.pedidos,
         historico: DB.historico,
         usuarios: DB.usuarios,
         currentDate: DB.currentDate
-    }));
+    };
+
+    localStorage.setItem('bfBitesDB', JSON.stringify(payload));
+
+    if (dbRef) {
+        dbRef.set(payload).catch(err => {
+            console.error("Erro ao salvar no Firebase:", err);
+        });
+    }
 }
 
 function carregarBanco() {
@@ -78,6 +105,64 @@ function carregarBanco() {
     }
 
     resetDoDiaSeNecessario();
+
+    // Sincronização em tempo real com Firebase
+    if (dbRef) {
+        dbRef.on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                console.log("Dados sincronizados com o Firebase Realtime Database");
+                if (data.produtos) DB.produtos = data.produtos;
+                if (data.pedidos) DB.pedidos = data.pedidos;
+                if (data.historico) DB.historico = data.historico;
+                if (data.usuarios) DB.usuarios = data.usuarios;
+                if (data.currentDate) DB.currentDate = data.currentDate;
+
+                // Atualiza cache local
+                localStorage.setItem('bfBitesDB', JSON.stringify({
+                    produtos: DB.produtos,
+                    pedidos: DB.pedidos,
+                    historico: DB.historico,
+                    usuarios: DB.usuarios,
+                    currentDate: DB.currentDate
+                }));
+            } else {
+                console.log("Banco de dados Firebase vazio. Inicializando com dados locais...");
+                dbRef.set({
+                    produtos: DB.produtos,
+                    pedidos: DB.pedidos,
+                    historico: DB.historico,
+                    usuarios: DB.usuarios,
+                    currentDate: DB.currentDate
+                });
+            }
+
+            // Re-renderiza a interface de acordo com o estado do usuário logado
+            if (typeof app !== 'undefined' && app.usuarioLogado) {
+                if (app.roleAtual === 'aluno' && typeof aluno !== 'undefined') {
+                    aluno.renderizarProdutos();
+                } else if (app.roleAtual === 'funcionario' && typeof funcionario !== 'undefined') {
+                    if (funcionario.activeTab === 'pedidos') {
+                        funcionario.renderizarPedidos();
+                    } else if (funcionario.activeTab === 'caixa') {
+                        funcionario.renderizarCaixa();
+                    } else if (funcionario.activeTab === 'estoque') {
+                        // Evita re-renderizar caso o usuário esteja editando um campo de input
+                        const activeEl = document.activeElement;
+                        const isEditing = activeEl && (
+                            activeEl.classList.contains('qty-input') || 
+                            activeEl.id === 'new-product-name' || 
+                            activeEl.id === 'new-product-quantity' || 
+                            activeEl.id === 'new-product-price'
+                        );
+                        if (!isEditing) {
+                            funcionario.renderizarEstoque();
+                        }
+                    }
+                }
+            }
+        });
+    }
 }
 
 function resetDoDiaSeNecessario() {
@@ -132,6 +217,7 @@ function salvarPedido(dados) {
     const novoPedido = {
         id: gerarIdPedido(),
         aluno: dados.aluno,
+        email: dados.email || "",
         itens: [...dados.itens],
         total: dados.total,
         status: 'pendente',
@@ -140,6 +226,15 @@ function salvarPedido(dados) {
 
     DB.pedidos.unshift(novoPedido); // Adiciona no início da lista
     salvarBanco();
+
+    // Salvar na coleção independente 'pedidos' no Firebase
+    if (typeof firebase !== 'undefined' && firebase.database) {
+        const orderIdClean = novoPedido.id.replace('#', '');
+        firebase.database().ref('pedidos/' + orderIdClean).set(novoPedido)
+            .then(() => console.log("Pedido salvo com sucesso no nó 'pedidos'!"))
+            .catch(err => console.error("Erro ao salvar pedido no nó 'pedidos':", err));
+    }
+
     return novoPedido;
 }
 
@@ -179,6 +274,14 @@ function marcarComoEntregue(id) {
 
     pedido.status = 'entregue';
     salvarBanco();
+
+    // Atualiza o status na coleção independente 'pedidos' no Firebase
+    if (typeof firebase !== 'undefined' && firebase.database) {
+        const orderIdClean = id.replace('#', '');
+        firebase.database().ref('pedidos/' + orderIdClean + '/status').set('entregue')
+            .catch(err => console.error("Erro ao atualizar status do pedido no Firebase:", err));
+    }
+
     return true;
 }
 
@@ -188,6 +291,14 @@ function recusarPedido(id) {
     if (pedido) {
         pedido.status = 'recusado';
         salvarBanco();
+
+        // Atualiza o status na coleção independente 'pedidos' no Firebase
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            const orderIdClean = id.replace('#', '');
+            firebase.database().ref('pedidos/' + orderIdClean + '/status').set('recusado')
+                .catch(err => console.error("Erro ao recusar pedido no Firebase:", err));
+        }
+
         return true;
     }
     return false;

@@ -4,6 +4,7 @@
 const app = {
     roleAtual: null, // 'aluno' ou 'funcionario'
     usuarioLogado: null,
+    usuarioEmail: null,
 
     // Inicializa a aplicação
     // parametro: nenhum
@@ -20,19 +21,35 @@ const app = {
     irParaLogin: function(role) {
         this.roleAtual = role;
         document.getElementById('login-title').innerText = `Entrar como ${role.charAt(0).toUpperCase() + role.slice(1)}`;
-        document.getElementById('user-name').placeholder = role === 'funcionario' ? 'Digite seu usuário...' : 'Digite seu nome...';
         
-        // Exibir grupo de senha para ambos
+        const nameGroup = document.getElementById('user-name').parentElement;
         const passwordGroup = document.getElementById('password-group');
-        if (passwordGroup) passwordGroup.style.display = 'block';
-        
+        const btnCadastro = document.getElementById('btn-cadastro-aluno');
+        const btnGoogle = document.getElementById('btn-google-login');
+        const btnEntrarManual = document.getElementById('btn-entrar-manual');
+
         document.getElementById('user-name').value = '';
         document.getElementById('user-password').value = '';
 
-        // Exibir ou ocultar o botão de cadastrar aluno
-        const btnCadastro = document.getElementById('btn-cadastro-aluno');
-        if (btnCadastro) {
-            btnCadastro.style.display = role === 'aluno' ? 'block' : 'none';
+        if (role === 'funcionario') {
+            // Funcionário: Login manual com credenciais próprias
+            if (nameGroup) nameGroup.style.display = 'block';
+            if (passwordGroup) passwordGroup.style.display = 'block';
+            if (btnEntrarManual) btnEntrarManual.style.display = 'block';
+            if (btnCadastro) btnCadastro.style.display = 'none';
+            if (btnGoogle) btnGoogle.style.display = 'none';
+            document.getElementById('user-name').placeholder = 'Digite seu usuário...';
+        } else {
+            // Aluno: Pode logar com senha ou Google
+            if (nameGroup) nameGroup.style.display = 'block';
+            if (passwordGroup) passwordGroup.style.display = 'block';
+            if (btnEntrarManual) btnEntrarManual.style.display = 'block';
+            if (btnCadastro) btnCadastro.style.display = 'block';
+            if (btnGoogle) {
+                btnGoogle.style.display = 'flex';
+                btnGoogle.innerHTML = `<img src="https://lh3.googleusercontent.com/COxitFqgSI10jQPEha8Jg1hpJg4hQPAWZthJHHS1AlqqE4t5-42JgBt35wGAADk66W0" alt="Google" style="width: 18px; margin-right: 8px; vertical-align: middle;"> Entrar com o Google`;
+            }
+            document.getElementById('user-name').placeholder = 'Digite seu nome...';
         }
 
         this.mudarTela('screen-login');
@@ -48,16 +65,17 @@ const app = {
         const password = senhaInput.value;
 
         if (username === "") {
-            this.mostrarToast("Por favor, digite seu nome", true);
+            this.mostrarToast("Por favor, digite seu usuário", true);
             return;
         }
 
         if (this.roleAtual === 'funcionario') {
-            if (username.toLowerCase() !== 'admin' || password !== '123') {
+            // Valida credenciais do funcionário
+            if (username.toLowerCase() !== 'funcionario' || password !== '123') {
                 this.mostrarToast("Usuário ou senha inválidos", true);
                 return;
             }
-            this.usuarioLogado = username;
+            this.usuarioLogado = "Funcionário";
             funcionario.renderizarFuncionario();
             this.mudarTela('screen-funcionario');
             this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
@@ -73,6 +91,7 @@ const app = {
                 return;
             }
             this.usuarioLogado = usuario.username;
+            this.usuarioEmail = usuario.email || "";
             document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
             aluno.renderizarProdutos();
             this.mudarTela('screen-aluno');
@@ -107,6 +126,55 @@ const app = {
         document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
         aluno.renderizarProdutos();
         this.mudarTela('screen-aluno');
+    },
+
+    // Realiza o login com o Google
+    loginComGoogle: function() {
+        if (typeof firebase === 'undefined' || !firebase.auth) {
+            this.mostrarToast("Firebase Auth não carregado", true);
+            return;
+        }
+
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider)
+            .then((result) => {
+                const user = result.user;
+
+                if (this.roleAtual === 'funcionario') {
+                    const adminUid = "2cH3uoX8VaUILaRniJJWQV7yfzI2";
+                    if (user.uid !== adminUid) {
+                        this.mostrarToast("Acesso negado. Apenas o administrador autorizado pode entrar.", true);
+                        firebase.auth().signOut();
+                        return;
+                    }
+
+                    this.usuarioLogado = user.displayName || "Admin";
+                    this.usuarioEmail = user.email || "";
+
+                    this.mostrarToast(`Bem-vindo, Admin ${this.usuarioLogado}! 🚀`);
+                    funcionario.renderizarFuncionario();
+                    this.mudarTela('screen-funcionario');
+                } else {
+                    this.usuarioLogado = user.displayName || user.email || "Aluno Google";
+                    this.usuarioEmail = user.email || "";
+                    
+                    // Verifica se usuário já existe no banco local de usuários
+                    const existe = DB.usuarios.some(u => u.username.toLowerCase() === this.usuarioLogado.toLowerCase());
+                    if (!existe) {
+                        DB.usuarios.push({ username: this.usuarioLogado, email: user.email, googleUser: true });
+                        salvarBanco();
+                    }
+
+                    this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}! 🎉`);
+                    document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
+                    aluno.renderizarProdutos();
+                    this.mudarTela('screen-aluno');
+                }
+            })
+            .catch((error) => {
+                console.error("Erro ao autenticar com Google:", error);
+                this.mostrarToast("Erro ao entrar com Google", true);
+            });
     },
 
     // Volta para a tela inicial e reseta dados temporários

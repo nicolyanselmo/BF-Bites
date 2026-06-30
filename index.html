@@ -36,8 +36,12 @@
                 <label for="user-password">Senha</label>
                 <input type="password" id="user-password" placeholder="Digite sua senha...">
             </div>
-            <button class="btn btn-primary" onclick="app.fazerLogin()">ENTRAR</button>
+            <button id="btn-entrar-manual" class="btn btn-primary" onclick="app.fazerLogin()">ENTRAR</button>
             <button id="btn-cadastro-aluno" class="btn btn-gold" onclick="app.fazerCadastro()" style="display: none;">CADASTRAR NOVO ALUNO</button>
+            <button id="btn-google-login" class="btn btn-google" onclick="app.loginComGoogle()" style="display: none;">
+                <img src="https://lh3.googleusercontent.com/COxitFqgSI10jQPEha8Jg1hpJg4hQPAWZthJHHS1AlqqE4t5-42JgBt35wGAADk66W0" alt="Google" style="width: 18px; margin-right: 8px; vertical-align: middle;">
+                Entrar com o Google
+            </button>
             <button class="btn btn-outline" onclick="app.voltarParaHome()">VOLTAR</button>
         </div>
     </section>
@@ -89,6 +93,9 @@
     </section>
 
     <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="pedidos.js"></script>
     <script src="aluno.js"></script>
     <script src="funcionario.js"></script>
