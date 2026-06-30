@@ -32,15 +32,13 @@ const app = {
         document.getElementById('user-password').value = '';
 
         if (role === 'funcionario') {
-            // Funcionário: Apenas login com Google (UID do Admin)
-            if (nameGroup) nameGroup.style.display = 'none';
-            if (passwordGroup) passwordGroup.style.display = 'none';
-            if (btnEntrarManual) btnEntrarManual.style.display = 'none';
+            // Funcionário: Login manual com credenciais próprias
+            if (nameGroup) nameGroup.style.display = 'block';
+            if (passwordGroup) passwordGroup.style.display = 'block';
+            if (btnEntrarManual) btnEntrarManual.style.display = 'block';
             if (btnCadastro) btnCadastro.style.display = 'none';
-            if (btnGoogle) {
-                btnGoogle.style.display = 'flex';
-                btnGoogle.innerHTML = `<img src="https://lh3.googleusercontent.com/COxitFqgSI10jQPEha8Jg1hpJg4hQPAWZthJHHS1AlqqE4t5-42JgBt35wGAADk66W0" alt="Google" style="width: 18px; margin-right: 8px; vertical-align: middle;"> Entrar como Admin com Google`;
-            }
+            if (btnGoogle) btnGoogle.style.display = 'none';
+            document.getElementById('user-name').placeholder = 'Digite seu usuário...';
         } else {
             // Aluno: Pode logar com senha ou Google
             if (nameGroup) nameGroup.style.display = 'block';
@@ -67,13 +65,20 @@ const app = {
         const password = senhaInput.value;
 
         if (username === "") {
-            this.mostrarToast("Por favor, digite seu nome", true);
+            this.mostrarToast("Por favor, digite seu usuário", true);
             return;
         }
 
         if (this.roleAtual === 'funcionario') {
-            this.mostrarToast("Login manual desativado para o administrador. Use o Google.", true);
-            return;
+            // Valida credenciais do funcionário
+            if (username.toLowerCase() !== 'funcionario' || password !== '123') {
+                this.mostrarToast("Usuário ou senha inválidos", true);
+                return;
+            }
+            this.usuarioLogado = "Funcionário";
+            funcionario.renderizarFuncionario();
+            this.mudarTela('screen-funcionario');
+            this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
         } else {
             // Login de aluno cadastrado
             const usuario = DB.usuarios.find(u => u.username.toLowerCase() === username.toLowerCase());
