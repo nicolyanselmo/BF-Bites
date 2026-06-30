@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BF Bites - Cantina Digital</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Sistema de Notificações -->
+    <div id="toast"></div>
+
+    <!-- 1. TELA INICIAL (SPLASH) -->
+    <section id="screen-splash" class="screen active">
+        <div class="logo-container">
+            <h1>BF Bites</h1>
+            <p>Sua cantina digital rápida e fácil</p>
+        </div>
+        <div style="width: 100%; max-width: 300px;">
+            <button class="btn btn-gold" onclick="app.irParaLogin('aluno')">SOU ALUNO</button>
+            <button class="btn btn-primary" onclick="app.irParaLogin('funcionario')">SOU FUNCIONÁRIO</button>
+        </div>
+    </section>
+
+    <!-- 2. TELA DE LOGIN -->
+    <section id="screen-login" class="screen">
+        <div class="card">
+            <h2 id="login-title">Identificação</h2>
+            <div class="input-group">
+                <label for="user-name">Nome de usuário</label>
+                <input type="text" id="user-name" placeholder="Digite seu nome...">
+            </div>
+            <div class="input-group" id="password-group" style="display: none;">
+                <label for="user-password">Senha</label>
+                <input type="password" id="user-password" placeholder="Digite sua senha...">
+            </div>
+            <button class="btn btn-primary" onclick="app.fazerLogin()">ENTRAR</button>
+            <button id="btn-cadastro-aluno" class="btn btn-gold" onclick="app.fazerCadastro()" style="display: none;">CADASTRAR NOVO ALUNO</button>
+            <button class="btn btn-outline" onclick="app.voltarParaHome()">VOLTAR</button>
+        </div>
+    </section>
+
+    <!-- 3. ÁREA DO ALUNO -->
+    <section id="screen-aluno" class="screen">
+        <header>
+            <h1>Olá, <span id="display-aluno-name" class="gold-text">Aluno</span></h1>
+            <p>O que vamos comer hoje?</p>
+        </header>
+
+        <div id="product-list" class="card" style="padding: 0;">
+            <!-- Produtos serão injetados aqui via JS -->
+        </div>
+
+        <div id="cart-container" class="cart-summary" style="display: none;">
+            <div>
+                <span id="cart-count">0</span> itens no carrinho
+            </div>
+            <button class="btn btn-gold" style="width: auto; margin: 0; padding: 10px 20px;" onclick="aluno.finalizarPedido()">
+                FINALIZAR
+            </button>
+        </div>
+        
+        <button class="btn btn-outline" onclick="app.voltarParaHome()" style="margin-top: 20px;">SAIR</button>
+    </section>
+
+    <!-- 4. ÁREA DO FUNCIONÁRIO -->
+    <section id="screen-funcionario" class="screen screen-funcionario">
+        <div class="func-topbar">
+            <div>
+                <h1>Painel do Funcionário</h1>
+                <p>Gerencie pedidos, estoque e caixa</p>
+            </div>
+            <button class="btn btn-gold btn-sm" style="width: auto; margin: 0;" onclick="app.voltarParaHome()">Sair</button>
+        </div>
+
+        <div id="funcionario-content" class="funcionario-content">
+            <section id="pedidos-section" class="func-section active"></section>
+            <section id="estoque-section" class="func-section"></section>
+            <section id="caixa-section" class="func-section"></section>
+        </div>
+
+        <div class="func-footer-menu">
+            <button class="btn btn-gold btn-sm active" data-tab="pedidos" onclick="funcionario.mostrarSecao('pedidos')">📋 Pedidos</button>
+            <button class="btn btn-gold btn-sm" data-tab="estoque" onclick="funcionario.mostrarSecao('estoque')">📦 Estoque</button>
+            <button class="btn btn-gold btn-sm" data-tab="caixa" onclick="funcionario.mostrarSecao('caixa')">💰 Caixa</button>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="pedidos.js"></script>
+    <script src="aluno.js"></script>
+    <script src="funcionario.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
