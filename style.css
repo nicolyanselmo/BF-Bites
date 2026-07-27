@@ -246,6 +246,32 @@ h1, h2, h3 {
     overflow: hidden;
 }
 
+/* Melhor contraste para o painel do funcionário: textos sobre o fundo escuro */
+.screen-funcionario .funcionario-content {
+    color: var(--white);
+}
+
+/* Títulos/paragraphs fora dos cards devem ficar visíveis no fundo azul */
+.screen-funcionario h3,
+.screen-funcionario h4,
+.screen-funcionario p {
+    color: rgba(255,255,255,0.95);
+}
+
+/* Conteúdo dentro de cards (fundo claro) mantém texto escuro para legibilidade */
+.screen-funcionario .card,
+.screen-funcionario .stock-card,
+.screen-funcionario .product-create-card {
+    color: var(--gray-dark);
+}
+
+/* Cabeçalhos dentro de cards continuam usando a cor primária para destaque */
+.screen-funcionario .card h3,
+.screen-funcionario .stock-card-header h3,
+.screen-funcionario .product-create-card h4 {
+    color: var(--primary-blue);
+}
+
 .screen-funcionario.active {
     display: flex;
     flex-direction: column;

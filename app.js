@@ -12,6 +12,16 @@ const app = {
     init: function() {
         carregarBanco();
         agendarResetDiario();
+        // Se houver resultado de redirect do Firebase, processar (fallback para ambientes que bloqueiam popup)
+        if (typeof firebase !== 'undefined' && firebase.auth) {
+            firebase.auth().getRedirectResult().then((result) => {
+                if (result && result.user) {
+                    this._handleGoogleSignResult(result.user);
+                }
+            }).catch(err => {
+                console.warn('getRedirectResult erro:', err);
+            });
+        }
         console.log("BF Bites inicializado 🚀");
     },
 
@@ -70,15 +80,27 @@ const app = {
         }
 
         if (this.roleAtual === 'funcionario') {
-            // Valida credenciais do funcionário
-            if (username.toLowerCase() !== 'funcionario' || password !== '123') {
+            // Valida credenciais do funcionário ou do administrador
+            const isFuncionarioCred = (username.toLowerCase() === 'funcionario' && password === '123');
+            const isAdminCred = (username.toLowerCase() === 'bf.bites0@gmail.com' && password === 'administrador');
+
+            if (!isFuncionarioCred && !isAdminCred) {
                 this.mostrarToast("Usuário ou senha inválidos", true);
                 return;
             }
-            this.usuarioLogado = "Funcionário";
+
+            if (isAdminCred) {
+                this.usuarioLogado = "Administrador";
+                this.usuarioEmail = username;
+                this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
+            } else {
+                this.usuarioLogado = "Funcionário";
+                this.usuarioEmail = "";
+                this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
+            }
+
             funcionario.renderizarFuncionario();
             this.mudarTela('screen-funcionario');
-            this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
         } else {
             // Login de aluno cadastrado
             const usuario = DB.usuarios.find(u => u.username.toLowerCase() === username.toLowerCase());
@@ -136,45 +158,56 @@ const app = {
         }
 
         const provider = new firebase.auth.GoogleAuthProvider();
+        // Tentar popup primeiro, se falhar (ex: popup bloqueado) usar redirect
         firebase.auth().signInWithPopup(provider)
             .then((result) => {
-                const user = result.user;
-
-                if (this.roleAtual === 'funcionario') {
-                    const adminUid = "2cH3uoX8VaUILaRniJJWQV7yfzI2";
-                    if (user.uid !== adminUid) {
-                        this.mostrarToast("Acesso negado. Apenas o administrador autorizado pode entrar.", true);
-                        firebase.auth().signOut();
-                        return;
-                    }
-
-                    this.usuarioLogado = user.displayName || "Admin";
-                    this.usuarioEmail = user.email || "";
-
-                    this.mostrarToast(`Bem-vindo, Admin ${this.usuarioLogado}! 🚀`);
-                    funcionario.renderizarFuncionario();
-                    this.mudarTela('screen-funcionario');
-                } else {
-                    this.usuarioLogado = user.displayName || user.email || "Aluno Google";
-                    this.usuarioEmail = user.email || "";
-                    
-                    // Verifica se usuário já existe no banco local de usuários
-                    const existe = DB.usuarios.some(u => u.username.toLowerCase() === this.usuarioLogado.toLowerCase());
-                    if (!existe) {
-                        DB.usuarios.push({ username: this.usuarioLogado, email: user.email, googleUser: true });
-                        salvarBanco();
-                    }
-
-                    this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}! 🎉`);
-                    document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
-                    aluno.renderizarProdutos();
-                    this.mudarTela('screen-aluno');
-                }
+                if (result && result.user) this._handleGoogleSignResult(result.user);
             })
             .catch((error) => {
-                console.error("Erro ao autenticar com Google:", error);
+                console.warn('signInWithPopup erro:', error);
+                // Se o ambiente não permitir popup, tentar redirect
+                const fallbackCodes = ['auth/popup-blocked', 'auth/cancelled-popup-request', 'auth/operation-not-supported-in-this-environment'];
+                if (error && error.code && fallbackCodes.includes(error.code)) {
+                    firebase.auth().signInWithRedirect(provider);
+                    return;
+                }
                 this.mostrarToast("Erro ao entrar com Google", true);
             });
+    },
+
+    // Processa o usuário retornado pelo Google (popup ou redirect)
+    _handleGoogleSignResult: function(user) {
+        if (!user) return;
+
+        if (this.roleAtual === 'funcionario') {
+            const adminUid = "2cH3uoX8VaUILaRniJJWQV7yfzI2";
+            if (user.uid !== adminUid) {
+                this.mostrarToast("Acesso negado. Apenas o administrador autorizado pode entrar.", true);
+                firebase.auth().signOut();
+                return;
+            }
+
+            this.usuarioLogado = user.displayName || "Admin";
+            this.usuarioEmail = user.email || "";
+
+            this.mostrarToast(`Bem-vindo, Admin ${this.usuarioLogado}! 🚀`);
+            funcionario.renderizarFuncionario();
+            this.mudarTela('screen-funcionario');
+        } else {
+            this.usuarioLogado = user.displayName || user.email || "Aluno Google";
+            this.usuarioEmail = user.email || "";
+
+            const existe = DB.usuarios.some(u => u.username.toLowerCase() === this.usuarioLogado.toLowerCase());
+            if (!existe) {
+                DB.usuarios.push({ username: this.usuarioLogado, email: user.email, googleUser: true });
+                salvarBanco();
+            }
+
+            this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}! 🎉`);
+            document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
+            aluno.renderizarProdutos();
+            this.mudarTela('screen-aluno');
+        }
     },
 
     // Volta para a tela inicial e reseta dados temporários
