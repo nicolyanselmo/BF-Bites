@@ -12,6 +12,17 @@ const app = {
     init: function() {
         carregarBanco();
         agendarResetDiario();
+        // Checar conexão com Firebase Realtime Database (se disponível)
+        if (typeof verificarConexaoFirebase === 'function') {
+            verificarConexaoFirebase().then(connected => {
+                if (!connected) {
+                    console.warn('Banco de dados Firebase não conectado ou inacessível.');
+                    this.mostrarToast('Banco de dados remoto inacessível', true);
+                } else {
+                    console.log('Banco de dados remoto conectado.');
+                }
+            });
+        }
         // Se houver resultado de redirect do Firebase, processar (fallback para ambientes que bloqueiam popup)
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().getRedirectResult().then((result) => {

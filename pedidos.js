@@ -20,6 +20,30 @@ if (typeof firebase !== 'undefined') {
     dbRef = firebase.database().ref('bfBitesDB');
 }
 
+// Estado de conexão com o Firebase
+let firebaseConnected = false;
+
+// Verifica se a conexão com o Realtime Database está funcionando
+function verificarConexaoFirebase() {
+    if (!dbRef) {
+        console.warn('Firebase Realtime Database não inicializado (dbRef é nulo)');
+        firebaseConnected = false;
+        return Promise.resolve(false);
+    }
+
+    return dbRef.once('value')
+        .then(() => {
+            console.log('Conexão com Firebase Realtime Database: OK');
+            firebaseConnected = true;
+            return true;
+        })
+        .catch(err => {
+            console.warn('Erro ao acessar Firebase Realtime Database:', err);
+            firebaseConnected = false;
+            return false;
+        });
+}
+
 const PRODUTOS_PADRAO = [
     { id: 1, nome: "Esfirra de Frango", preco: 11.00, estoque: 20 },
     { id: 2, nome: "Esfirra de Calabresa", preco: 11.00, estoque: 20 },
