@@ -4,6 +4,9 @@
 // UIDs do Firebase Authentication autorizados a acessar como Administrador
 const ADMIN_UIDS = ["2cH3uoX8VaUILaRniJJWQV7yfzI2", "LsoKUvhY7QTqVJrTtsPA8aW40j32", "lAyOJO9HIYPKeJ4kV7j3bNqLvb93"];
 
+// Chave usada para persistir a sessão do usuário entre atualizações de página
+const SESSION_KEY = 'bfBitesSessao';
+
 const app = {
     roleAtual: null, // 'aluno' ou 'funcionario'
     usuarioLogado: null,
@@ -26,6 +29,25 @@ const app = {
                 }
             });
         }
+
+        // Restaura a sessão salva (aluno ou funcionário/admin) para não deslogar ao atualizar a página
+        const sessao = this._carregarSessao();
+        if (sessao) {
+            this.roleAtual = sessao.role;
+            this.usuarioLogado = sessao.nome;
+            this.usuarioEmail = sessao.email;
+
+            if (sessao.role === 'aluno') {
+                document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
+                aluno.renderizarProdutos();
+                aluno.renderizarMeusPedidos();
+                this.mudarTela('screen-aluno');
+            } else if (sessao.role === 'funcionario') {
+                funcionario.renderizarFuncionario();
+                this.mudarTela('screen-funcionario');
+            }
+        }
+
         // Se houver resultado de redirect do Firebase, processar (fallback para ambientes que bloqueiam popup)
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().getRedirectResult().then((result) => {
@@ -35,8 +57,47 @@ const app = {
             }).catch(err => {
                 console.warn('getRedirectResult erro:', err);
             });
+
+            // Valida sessões restauradas que dependem do Firebase Auth (aluno via Google e admin)
+            firebase.auth().onAuthStateChanged((user) => {
+                if (!sessao || !sessao.viaFirebase) return;
+                const valido = user && (!sessao.isAdmin || ADMIN_UIDS.includes(user.uid));
+                if (!valido && this.roleAtual === sessao.role) {
+                    this._limparSessao();
+                    this.voltarParaHome();
+                }
+            });
         }
+
         console.log("BF Bites inicializado 🚀");
+    },
+
+    // Salva a sessão atual no localStorage para sobreviver a atualizações de página
+    _salvarSessao: function(role, nome, email, opts = {}) {
+        const sessao = {
+            role: role,
+            nome: nome,
+            email: email || "",
+            viaFirebase: !!opts.viaFirebase,
+            isAdmin: !!opts.isAdmin
+        };
+        localStorage.setItem(SESSION_KEY, JSON.stringify(sessao));
+    },
+
+    // Lê a sessão salva no localStorage, se houver
+    _carregarSessao: function() {
+        const dados = localStorage.getItem(SESSION_KEY);
+        if (!dados) return null;
+        try {
+            return JSON.parse(dados);
+        } catch (e) {
+            return null;
+        }
+    },
+
+    // Remove a sessão salva no localStorage
+    _limparSessao: function() {
+        localStorage.removeItem(SESSION_KEY);
     },
 
     // Navega para a tela de login definindo o papel do usuário
@@ -93,6 +154,7 @@ const app = {
             if (isFuncionarioCred) {
                 this.usuarioLogado = "Funcionário";
                 this.usuarioEmail = "";
+                this._salvarSessao('funcionario', this.usuarioLogado, this.usuarioEmail, { viaFirebase: false, isAdmin: false });
                 this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
 
                 funcionario.renderizarFuncionario();
@@ -152,6 +214,7 @@ const app = {
 
             this.usuarioLogado = user.displayName || "Admin";
             this.usuarioEmail = user.email || "";
+            this._salvarSessao('funcionario', this.usuarioLogado, this.usuarioEmail, { viaFirebase: true, isAdmin: true });
 
             this.mostrarToast(`Bem-vindo, Admin ${this.usuarioLogado}! 🚀`);
             funcionario.renderizarFuncionario();
@@ -159,6 +222,7 @@ const app = {
         } else {
             this.usuarioLogado = user.displayName || user.email || "Aluno Google";
             this.usuarioEmail = user.email || "";
+            this._salvarSessao('aluno', this.usuarioLogado, this.usuarioEmail, { viaFirebase: true, isAdmin: false });
 
             const existe = DB.usuarios.some(u => u.username.toLowerCase() === this.usuarioLogado.toLowerCase());
             if (!existe) {
@@ -169,6 +233,7 @@ const app = {
             this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}! 🎉`);
             document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
             aluno.renderizarProdutos();
+            aluno.renderizarMeusPedidos();
             this.mudarTela('screen-aluno');
         }
     },
@@ -179,6 +244,10 @@ const app = {
     voltarParaHome: function() {
         this.roleAtual = null;
         this.usuarioLogado = null;
+        this._limparSessao();
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser) {
+            firebase.auth().signOut();
+        }
         document.getElementById('user-name').value = "";
         document.getElementById('user-password').value = "";
         this.mudarTela('screen-splash');

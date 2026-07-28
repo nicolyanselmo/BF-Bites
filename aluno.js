@@ -3,6 +3,66 @@
 
 const aluno = {
     carrinho: [],
+    statusConhecidos: {}, // guarda o último status visto de cada pedido, para avisar quando mudar
+
+    // Renderiza os cards de acompanhamento dos pedidos do aluno logado
+    // parametro: nenhum
+    // retorno: insere o HTML dos pedidos no elemento #meus-pedidos-list
+    renderizarMeusPedidos: function() {
+        const container = document.getElementById('meus-pedidos-container');
+        const lista = document.getElementById('meus-pedidos-list');
+        if (!container || !lista || !app.usuarioLogado) return;
+
+        const meusPedidos = obterPedidos().filter(p => p.aluno === app.usuarioLogado);
+
+        if (meusPedidos.length === 0) {
+            container.style.display = 'none';
+            lista.innerHTML = '';
+            return;
+        }
+
+        const statusInfo = {
+            pendente: { label: '⏳ Aguardando confirmação', classe: 'status-pending' },
+            entregue: { label: '✅ Pedido confirmado!', classe: 'status-delivered' },
+            recusado: { label: '❌ Pedido recusado', classe: 'status-refused' }
+        };
+
+        // Avisa o aluno quando o status de um pedido muda (confirmado ou recusado)
+        meusPedidos.forEach(pedido => {
+            const statusAnterior = this.statusConhecidos[pedido.id];
+            if (statusAnterior && statusAnterior !== pedido.status) {
+                if (pedido.status === 'entregue') {
+                    app.mostrarToast(`Pedido ${pedido.id} confirmado! ✅`);
+                } else if (pedido.status === 'recusado') {
+                    app.mostrarToast(`Pedido ${pedido.id} foi recusado.`, true);
+                }
+            }
+            this.statusConhecidos[pedido.id] = pedido.status;
+        });
+
+        container.style.display = 'block';
+        lista.innerHTML = meusPedidos.map(pedido => {
+            const info = statusInfo[pedido.status] || statusInfo.pendente;
+            const cardClass = pedido.status === 'entregue' ? 'delivered' : (pedido.status === 'recusado' ? 'refused' : '');
+            const itensHtml = pedido.itens.map(item => `<li>${item.nome}</li>`).join('');
+
+            return `
+                <div class="card order-card ${cardClass}">
+                    <div class="order-header">
+                        <div>
+                            <h3>Pedido ${pedido.id}</h3>
+                            <span class="status-badge ${info.classe}">${info.label}</span>
+                        </div>
+                        <span>${pedido.data}</span>
+                    </div>
+                    <ul class="order-items">${itensHtml}</ul>
+                    <div class="order-footer">
+                        <strong>Total: R$ ${pedido.total.toFixed(2)}</strong>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
 
     // Renderiza a lista de produtos na interface do aluno
     // parametro: nenhum
@@ -135,6 +195,7 @@ const aluno = {
             this.carrinho = [];
             this.atualizarInterfaceCarrinho();
             this.renderizarProdutos(); // Atualiza estoque na tela
+            this.renderizarMeusPedidos();
         }
     }
 };
