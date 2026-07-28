@@ -152,6 +152,16 @@ h1, h2, h3 {
     font-size: 3rem;
 }
 
+#screen-login {
+    justify-content: center;
+    align-items: center;
+}
+
+#screen-login .card {
+    width: 100%;
+    max-width: 400px;
+}
+
 .screen header h1 {
     color: var(--white);
 }

@@ -1,11 +1,10 @@
 // Gerenciamento de Dados (Estoque e Pedidos)
-// Sincronizado em tempo real com Firebase Realtime Database
+// Sincronizado em tempo real com Firebase Firestore
 
 // Configuração do Firebase fornecida pelo usuário
 const firebaseConfig = {
   apiKey: "AIzaSyArq7QmUjxkJ3tOx1WulugErf388tnxTOw",
   authDomain: "bf-bites.firebaseapp.com",
-  databaseURL: "https://bf-bites-default-rtdb.firebaseio.com",
   projectId: "bf-bites",
   storageBucket: "bf-bites.firebasestorage.app",
   messagingSenderId: "3501684000",
@@ -17,28 +16,28 @@ const firebaseConfig = {
 let dbRef = null;
 if (typeof firebase !== 'undefined') {
     firebase.initializeApp(firebaseConfig);
-    dbRef = firebase.database().ref('bfBitesDB');
+    dbRef = firebase.firestore().collection('bfBitesDB').doc('main');
 }
 
 // Estado de conexão com o Firebase
 let firebaseConnected = false;
 
-// Verifica se a conexão com o Realtime Database está funcionando
+// Verifica se a conexão com o Firestore está funcionando
 function verificarConexaoFirebase() {
     if (!dbRef) {
-        console.warn('Firebase Realtime Database não inicializado (dbRef é nulo)');
+        console.warn('Firebase Firestore não inicializado (dbRef é nulo)');
         firebaseConnected = false;
         return Promise.resolve(false);
     }
 
-    return dbRef.once('value')
+    return dbRef.get()
         .then(() => {
-            console.log('Conexão com Firebase Realtime Database: OK');
+            console.log('Conexão com Firebase Firestore: OK');
             firebaseConnected = true;
             return true;
         })
         .catch(err => {
-            console.warn('Erro ao acessar Firebase Realtime Database:', err);
+            console.warn('Erro ao acessar Firebase Firestore:', err);
             firebaseConnected = false;
             return false;
         });
@@ -102,7 +101,7 @@ function salvarBanco() {
 
     if (dbRef) {
         dbRef.set(payload).catch(err => {
-            console.error("Erro ao salvar no Firebase:", err);
+            console.error("Erro ao salvar no Firestore:", err);
         });
     }
 }
@@ -132,10 +131,10 @@ function carregarBanco() {
 
     // Sincronização em tempo real com Firebase
     if (dbRef) {
-        dbRef.on('value', (snapshot) => {
-            const data = snapshot.val();
+        dbRef.onSnapshot((snapshot) => {
+            const data = snapshot.exists ? snapshot.data() : null;
             if (data) {
-                console.log("Dados sincronizados com o Firebase Realtime Database");
+                console.log("Dados sincronizados com o Firebase Firestore");
                 if (data.produtos) DB.produtos = data.produtos;
                 if (data.pedidos) DB.pedidos = data.pedidos;
                 if (data.historico) DB.historico = data.historico;
@@ -252,11 +251,11 @@ function salvarPedido(dados) {
     salvarBanco();
 
     // Salvar na coleção independente 'pedidos' no Firebase
-    if (typeof firebase !== 'undefined' && firebase.database) {
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
         const orderIdClean = novoPedido.id.replace('#', '');
-        firebase.database().ref('pedidos/' + orderIdClean).set(novoPedido)
-            .then(() => console.log("Pedido salvo com sucesso no nó 'pedidos'!"))
-            .catch(err => console.error("Erro ao salvar pedido no nó 'pedidos':", err));
+        firebase.firestore().collection('pedidos').doc(orderIdClean).set(novoPedido)
+            .then(() => console.log("Pedido salvo com sucesso na coleção 'pedidos'!"))
+            .catch(err => console.error("Erro ao salvar pedido na coleção 'pedidos':", err));
     }
 
     return novoPedido;
@@ -300,9 +299,9 @@ function marcarComoEntregue(id) {
     salvarBanco();
 
     // Atualiza o status na coleção independente 'pedidos' no Firebase
-    if (typeof firebase !== 'undefined' && firebase.database) {
+    if (typeof firebase !== 'undefined' && firebase.firestore) {
         const orderIdClean = id.replace('#', '');
-        firebase.database().ref('pedidos/' + orderIdClean + '/status').set('entregue')
+        firebase.firestore().collection('pedidos').doc(orderIdClean).update({ status: 'entregue' })
             .catch(err => console.error("Erro ao atualizar status do pedido no Firebase:", err));
     }
 
@@ -317,9 +316,9 @@ function recusarPedido(id) {
         salvarBanco();
 
         // Atualiza o status na coleção independente 'pedidos' no Firebase
-        if (typeof firebase !== 'undefined' && firebase.database) {
+        if (typeof firebase !== 'undefined' && firebase.firestore) {
             const orderIdClean = id.replace('#', '');
-            firebase.database().ref('pedidos/' + orderIdClean + '/status').set('recusado')
+            firebase.firestore().collection('pedidos').doc(orderIdClean).update({ status: 'recusado' })
                 .catch(err => console.error("Erro ao recusar pedido no Firebase:", err));
         }
 
