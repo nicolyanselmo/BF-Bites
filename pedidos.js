@@ -164,6 +164,7 @@ function carregarBanco() {
             if (typeof app !== 'undefined' && app.usuarioLogado) {
                 if (app.roleAtual === 'aluno' && typeof aluno !== 'undefined') {
                     aluno.renderizarProdutos();
+                    aluno.renderizarMeusPedidos();
                 } else if (app.roleAtual === 'funcionario' && typeof funcionario !== 'undefined') {
                     if (funcionario.activeTab === 'pedidos') {
                         funcionario.renderizarPedidos();
