@@ -1,6 +1,9 @@
 // Controle Geral da Aplicação
 // Gerencia navegação, login e UI global
 
+// UIDs do Firebase Authentication autorizados a acessar como Administrador
+const ADMIN_UIDS = ["2cH3uoX8VaUILaRniJJWQV7yfzI2", "LsoKUvhY7QTqVJrTtsPA8aW40j32", "lAyOJO9HIYPKeJ4kV7j3bNqLvb93"];
+
 const app = {
     roleAtual: null, // 'aluno' ou 'funcionario'
     usuarioLogado: null,
@@ -27,7 +30,7 @@ const app = {
         if (typeof firebase !== 'undefined' && firebase.auth) {
             firebase.auth().getRedirectResult().then((result) => {
                 if (result && result.user) {
-                    this._handleGoogleSignResult(result.user);
+                    this._handleAuthSignResult(result.user);
                 }
             }).catch(err => {
                 console.warn('getRedirectResult erro:', err);
@@ -45,7 +48,6 @@ const app = {
         
         const nameGroup = document.getElementById('user-name').parentElement;
         const passwordGroup = document.getElementById('password-group');
-        const btnCadastro = document.getElementById('btn-cadastro-aluno');
         const btnGoogle = document.getElementById('btn-google-login');
         const btnEntrarManual = document.getElementById('btn-entrar-manual');
 
@@ -57,20 +59,14 @@ const app = {
             if (nameGroup) nameGroup.style.display = 'block';
             if (passwordGroup) passwordGroup.style.display = 'block';
             if (btnEntrarManual) btnEntrarManual.style.display = 'block';
-            if (btnCadastro) btnCadastro.style.display = 'none';
             if (btnGoogle) btnGoogle.style.display = 'none';
             document.getElementById('user-name').placeholder = 'Digite seu usuário...';
         } else {
-            // Aluno: Pode logar com senha ou Google
-            if (nameGroup) nameGroup.style.display = 'block';
-            if (passwordGroup) passwordGroup.style.display = 'block';
-            if (btnEntrarManual) btnEntrarManual.style.display = 'block';
-            if (btnCadastro) btnCadastro.style.display = 'block';
-            if (btnGoogle) {
-                btnGoogle.style.display = 'flex';
-                btnGoogle.innerHTML = `<img src="https://lh3.googleusercontent.com/COxitFqgSI10jQPEha8Jg1hpJg4hQPAWZthJHHS1AlqqE4t5-42JgBt35wGAADk66W0" alt="Google" style="width: 18px; margin-right: 8px; vertical-align: middle;"> Entrar com o Google`;
-            }
-            document.getElementById('user-name').placeholder = 'Digite seu nome...';
+            // Aluno: login exclusivamente com Google
+            if (nameGroup) nameGroup.style.display = 'none';
+            if (passwordGroup) passwordGroup.style.display = 'none';
+            if (btnEntrarManual) btnEntrarManual.style.display = 'none';
+            if (btnGoogle) btnGoogle.style.display = 'flex';
         }
 
         this.mudarTela('screen-login');
@@ -91,74 +87,31 @@ const app = {
         }
 
         if (this.roleAtual === 'funcionario') {
-            // Valida credenciais do funcionário ou do administrador
+            // Valida credenciais do funcionário
             const isFuncionarioCred = (username.toLowerCase() === 'funcionario' && password === '123');
-            const isAdminCred = (username.toLowerCase() === 'bf.bites0@gmail.com' && password === 'administrador');
 
-            if (!isFuncionarioCred && !isAdminCred) {
+            if (isFuncionarioCred) {
+                this.usuarioLogado = "Funcionário";
+                this.usuarioEmail = "";
+                this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
+
+                funcionario.renderizarFuncionario();
+                this.mudarTela('screen-funcionario');
+                return;
+            }
+
+            // Não é o funcionário padrão: tenta autenticar como Administrador via Firebase Auth
+            if (typeof firebase === 'undefined' || !firebase.auth) {
                 this.mostrarToast("Usuário ou senha inválidos", true);
                 return;
             }
 
-            if (isAdminCred) {
-                this.usuarioLogado = "Administrador";
-                this.usuarioEmail = username;
-                this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
-            } else {
-                this.usuarioLogado = "Funcionário";
-                this.usuarioEmail = "";
-                this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
-            }
-
-            funcionario.renderizarFuncionario();
-            this.mudarTela('screen-funcionario');
-        } else {
-            // Login de aluno cadastrado
-            const usuario = DB.usuarios.find(u => u.username.toLowerCase() === username.toLowerCase());
-            if (!usuario) {
-                this.mostrarToast("Aluno não cadastrado. Clique em CADASTRAR NOVO ALUNO", true);
-                return;
-            }
-            if (usuario.password !== password) {
-                this.mostrarToast("Senha incorreta", true);
-                return;
-            }
-            this.usuarioLogado = usuario.username;
-            this.usuarioEmail = usuario.email || "";
-            document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
-            aluno.renderizarProdutos();
-            this.mudarTela('screen-aluno');
-            this.mostrarToast(`Bem-vindo, ${this.usuarioLogado}!`);
+            firebase.auth().signInWithEmailAndPassword(username, password)
+                .then((result) => this._handleAuthSignResult(result.user))
+                .catch(() => {
+                    this.mostrarToast("Usuário ou senha inválidos", true);
+                });
         }
-    },
-
-    // Realiza o cadastro do novo aluno e faz login automático
-    fazerCadastro: function() {
-        const nomeInput = document.getElementById('user-name');
-        const senhaInput = document.getElementById('user-password');
-        const username = nomeInput.value.trim();
-        const password = senhaInput.value;
-
-        if (username === "" || password === "") {
-            this.mostrarToast("Preencha usuário e senha para cadastrar", true);
-            return;
-        }
-
-        const existe = DB.usuarios.some(u => u.username.toLowerCase() === username.toLowerCase());
-        if (existe) {
-            this.mostrarToast("Este nome de usuário já está cadastrado", true);
-            return;
-        }
-
-        DB.usuarios.push({ username, password });
-        salvarBanco();
-        
-        this.usuarioLogado = username;
-        this.mostrarToast("Cadastro realizado com sucesso! 🎉");
-        
-        document.getElementById('display-aluno-name').innerText = this.usuarioLogado;
-        aluno.renderizarProdutos();
-        this.mudarTela('screen-aluno');
     },
 
     // Realiza o login com o Google
@@ -172,7 +125,7 @@ const app = {
         // Tentar popup primeiro, se falhar (ex: popup bloqueado) usar redirect
         firebase.auth().signInWithPopup(provider)
             .then((result) => {
-                if (result && result.user) this._handleGoogleSignResult(result.user);
+                if (result && result.user) this._handleAuthSignResult(result.user);
             })
             .catch((error) => {
                 console.warn('signInWithPopup erro:', error);
@@ -186,13 +139,12 @@ const app = {
             });
     },
 
-    // Processa o usuário retornado pelo Google (popup ou redirect)
-    _handleGoogleSignResult: function(user) {
+    // Processa o usuário retornado pelo Firebase Auth (Google ou e-mail/senha)
+    _handleAuthSignResult: function(user) {
         if (!user) return;
 
         if (this.roleAtual === 'funcionario') {
-            const adminUid = "2cH3uoX8VaUILaRniJJWQV7yfzI2";
-            if (user.uid !== adminUid) {
+            if (!ADMIN_UIDS.includes(user.uid)) {
                 this.mostrarToast("Acesso negado. Apenas o administrador autorizado pode entrar.", true);
                 firebase.auth().signOut();
                 return;
